@@ -10,14 +10,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 @RestController
 public class UserController {
@@ -54,5 +54,26 @@ public class UserController {
     public ResponseEntity<List<User>> listUsers() {
         var allUsers = userRepository.findAll();
         return ResponseEntity.ok(allUsers);
+    }
+
+    @PostMapping("{userId}/users/follow")
+    public ResponseEntity<Void> followUser(@PathVariable UUID userId, JwtAuthenticationToken jwtAuthenticationToken) {
+        var user = userRepository.findById(UUID.fromString(jwtAuthenticationToken.getName())).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        var followedUser = userRepository.findById(userId);
+
+        user.getFollowedUsers().add(followedUser.get());
+        userRepository.save(user);
+
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("{userId}/users/unfollow")
+    public ResponseEntity<Void> unfollowUser(@PathVariable UUID userId, JwtAuthenticationToken jwtAuthenticationToken) {
+        var user = userRepository.findById(UUID.fromString(jwtAuthenticationToken.getName())).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        var followedUser = userRepository.findById(userId);
+
+        user.getFollowedUsers().remove(followedUser.get());
+        userRepository.save(user);
+        return ResponseEntity.ok().build();
     }
 }

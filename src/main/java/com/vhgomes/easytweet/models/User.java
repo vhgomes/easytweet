@@ -29,11 +29,20 @@ public class User {
     )
     private Set<Role> roles;
 
-    public User(UUID userId, String username, String password, Set<Role> roles) {
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "tb_user_follows",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "followed_user_id")
+    )
+    private Set<User> followedUsers;
+
+    public User(UUID userId, String username, String password, Set<Role> roles, Set<User> followedUsers) {
         this.userId = userId;
         this.username = username;
         this.password = password;
         this.roles = roles;
+        this.followedUsers = followedUsers;
     }
 
     public User() {
@@ -73,5 +82,13 @@ public class User {
 
     public boolean isLoginCorrect(LoginRequest loginRequest, PasswordEncoder passwordEncoder) {
         return passwordEncoder.matches(loginRequest.password(), this.password);
+    }
+
+    public Set<User> getFollowedUsers() {
+        return followedUsers;
+    }
+
+    public void setFollowedUsers(Set<User> followedUsers) {
+        this.followedUsers = followedUsers;
     }
 }

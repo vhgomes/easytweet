@@ -3,7 +3,9 @@ package com.vhgomes.easytweet.controller;
 import com.vhgomes.easytweet.dtos.CreateTweetDTO;
 import com.vhgomes.easytweet.dtos.FeedDTO;
 import com.vhgomes.easytweet.dtos.FeedItemDTO;
+import com.vhgomes.easytweet.models.Retweet;
 import com.vhgomes.easytweet.models.Tweet;
+import com.vhgomes.easytweet.repositories.RetweetRepository;
 import com.vhgomes.easytweet.repositories.TweetRepository;
 import com.vhgomes.easytweet.repositories.UserRepository;
 import org.springframework.data.domain.PageRequest;
@@ -21,9 +23,12 @@ public class TweetController {
     private final TweetRepository tweetRepository;
     private final UserRepository userRepository;
 
-    public TweetController(TweetRepository tweetRepository, UserRepository userRepository) {
+    private final RetweetRepository retweetRepository;
+
+    public TweetController(TweetRepository tweetRepository, UserRepository userRepository, RetweetRepository retweetRepository) {
         this.tweetRepository = tweetRepository;
         this.userRepository = userRepository;
+        this.retweetRepository = retweetRepository;
     }
 
     @PostMapping("/tweets")
@@ -63,5 +68,18 @@ public class TweetController {
             return ResponseEntity.ok().build();
         }
         return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    }
+
+    @PostMapping("/tweets/repost/{id}")
+    public ResponseEntity<Void> repostTweet(@PathVariable("id") long tweetId, JwtAuthenticationToken jwtAuthenticationToken) {
+        var tweet = tweetRepository.findById(tweetId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        var user = userRepository.findById(UUID.fromString(jwtAuthenticationToken.getName()));
+
+        var retweet = new Retweet();
+        retweet.setUser(user.get());
+        retweet.setTweetId(tweet);
+        retweetRepository.save(retweet);
+
+        return ResponseEntity.ok().build();
     }
 }
