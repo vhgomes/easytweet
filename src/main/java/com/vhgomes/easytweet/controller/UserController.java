@@ -14,7 +14,6 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -75,5 +74,12 @@ public class UserController {
         user.getFollowedUsers().remove(followedUser.get());
         userRepository.save(user);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/users/followers")
+    public ResponseEntity<List<UUID>> getFollowers(JwtAuthenticationToken jwtAuthenticationToken) {
+        var user = userRepository.findById(UUID.fromString(jwtAuthenticationToken.getName())).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        var followers = userRepository.findFollowedUserIds(user.getUserId());
+        return ResponseEntity.ok(followers);
     }
 }
